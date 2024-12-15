@@ -13,7 +13,7 @@ class TurnManager:
         self.current_phase_index = (self.current_phase_index + 1) % len(self.phases)
 
     def get_current_player(self):
-        return self.players[self.current_player_index]
+        return self.players[self.current_player_index].name
 
     def get_current_phase(self):
         return self.phases[self.current_phase_index]

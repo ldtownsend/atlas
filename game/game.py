@@ -15,6 +15,7 @@ class Game:
     def initialize_game(self):
         self.players = self._create_players()
         self.board = self._create_board()
+        self.turn_manager = self._create_turn_manager()
 
     def _create_players(self):
         # Temporary Hardcode
@@ -40,6 +41,9 @@ class Game:
         ]
 
         return Board("Mimal", mimal)
+
+    def _create_turn_manager(self):
+        return TurnManager(players=self.players)
 
     def start(self):
         self.main_loop()
