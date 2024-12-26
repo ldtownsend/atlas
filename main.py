@@ -3,6 +3,7 @@ from ui import ui_handler
 
 import streamlit as st
 
+
 def main():
     if "game" not in st.session_state:
         st.session_state.game = Game()
