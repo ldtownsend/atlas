@@ -20,8 +20,8 @@ class Game:
     def _create_players(self):
         # Temporary Hardcode
         first_matchup = [
-            Player(player_id=1, name="Luke"),
-            Player(player_id=2, name="Steve"),
+            Player(player_id=1, name="Ellie"),
+            Player(player_id=2, name="Bo"),
         ]
 
         for player in first_matchup:
@@ -45,6 +45,8 @@ class Game:
     def _create_turn_manager(self):
         return TurnManager(players=self.players)
 
+    # def _set_board(self):
+        
     def start(self):
         self.main_loop()
 
@@ -52,7 +54,7 @@ class Game:
         while not self.check_winner():
             self.round_number += 1
             current_player = self.turn_manager.get_current_player()
-
+            
             # other stuff happens
             self.turn_manager.next_player()
 
