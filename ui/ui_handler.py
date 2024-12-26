@@ -15,6 +15,56 @@ def end_turn():
     st.session_state.current_player = next_player
 
 
+def end_round():
+    st.session_state.round_number += 1
+    st.session_state.current_player = st.session_state.Players[0]
+
+
+def initialize_unit_distribution(st_territory, territory):
+    if territory["owner"] is None:
+        with st.form(key=f"claim_form_{territory['name']}"):
+            claim_button = st.form_submit_button("Claim Territory")
+
+            if claim_button:
+                # Assign ownership and deploy 1 unit
+                territory["owner"] = st.session_state.current_player
+                territory["units"] += 1
+
+                st.session_state[st.session_state.current_player][
+                    "available_units"
+                ] -= 1
+
+                st.session_state[f"Territory-{st_territory}"] = territory
+                end_turn()
+                st.rerun()  # Refresh UI after claim
+
+    # DEPLOY UNITS FORM
+    if territory["owner"] == st.session_state.current_player:
+        with st.form(key=f"deploy_form_{territory['name']}"):
+            deploy_units = st.number_input(
+                "Deploy Units",
+                value=0,
+                step=1,
+                max_value=st.session_state[st.session_state.current_player][
+                    "available_units"
+                ],
+                placeholder="Number of Units",
+            )
+
+            st.session_state[st.session_state.current_player][
+                "available_units"
+            ] -= deploy_units
+
+            deploy_button = st.form_submit_button("Deploy Units")
+
+            if deploy_button and deploy_units > 0:
+                # Deploy additional units
+                territory["units"] += deploy_units
+                st.session_state[f"Territory-{st_territory}"] = territory
+                end_turn()
+                st.rerun()  # Refresh UI after deployment
+
+
 def display_board():
     for st_territory in st.session_state["Territories"]:
         # Retrieve territory data
@@ -34,52 +84,22 @@ def display_board():
                 owner = territory["owner"] if territory["owner"] else "Unclaimed"
                 st.markdown(f"Owner: {owner}")
 
-            # Display Ownership Information
             with tile_action:
 
-                # CLAIM FORM
-                if territory["owner"] is None:
-                    with st.form(key=f"claim_form_{territory['name']}"):
-                        claim_button = st.form_submit_button("Claim Territory")
-
-                        if claim_button:
-                            # Assign ownership and deploy 1 unit
-                            territory["owner"] = st.session_state.current_player
-                            territory["units"] += 1
-
-                            st.session_state[st.session_state.current_player][
-                                "available_units"
-                            ] -= 1
-
-                            st.session_state[f"Territory-{st_territory}"] = territory
-                            end_turn()
-                            st.rerun()  # Refresh UI after claim
-
-                # DEPLOY UNITS FORM
-                if territory["owner"] == st.session_state.current_player:
-                    with st.form(key=f"deploy_form_{territory['name']}"):
-                        deploy_units = st.number_input(
-                            "Deploy Units",
-                            value=0,
-                            step=1,
-                            max_value=st.session_state[st.session_state.current_player][
-                                "available_units"
-                            ],
-                            placeholder="Number of Units",
-                        )
-
-                        st.session_state[st.session_state.current_player][
+                if st.session_state.round_number == 0:
+                    total_available_units = 0
+                    for player in st.session_state.Players:
+                        total_available_units += st.session_state[player][
                             "available_units"
-                        ] -= deploy_units
+                        ]
+                        pass
+                    if total_available_units == 0:
+                        end_round()
 
-                        deploy_button = st.form_submit_button("Deploy Units")
-
-                        if deploy_button and deploy_units > 0:
-                            # Deploy additional units
-                            territory["units"] += deploy_units
-                            st.session_state[f"Territory-{st_territory}"] = territory
-                            end_turn()
-                            st.rerun()  # Refresh UI after deployment
+                    else:
+                        initialize_unit_distribution(
+                            st_territory=st_territory, territory=territory
+                        )
 
 
 def game_status(game):
@@ -106,7 +126,7 @@ def layout(game):
     st.set_page_config(layout="wide")
 
     # Primary Game Canvas
-    left_col, middle_col = st.columns([1, 2])
+    left_col, middle_col = st.columns([1, 3])
     with left_col:
         # with st.container(height=650):
         #     st.write(st.session_state)
@@ -123,6 +143,7 @@ def layout(game):
     # with right_col:
     #     st.write("### Game Object Attributes")
 
+    st.write(st.session_state)
     # st.write("### Territories")
     # for territory in game.board.territories:
     #     st.write(f"**Territory Name:** {territory.name}")
