@@ -20,7 +20,7 @@ def end_round():
     st.session_state.current_player = st.session_state.Players[0]
 
 
-def initialize_unit_distribution(st_territory, territory):
+def initialize_unit_distribution(territory):
     if territory["owner"] is None:
         with st.form(key=f"claim_form_{territory['name']}"):
             claim_button = st.form_submit_button("Claim Territory")
@@ -34,7 +34,6 @@ def initialize_unit_distribution(st_territory, territory):
                     "available_units"
                 ] -= 1
 
-                st.session_state[f"Territory-{st_territory}"] = territory
                 end_turn()
                 st.rerun()  # Refresh UI after claim
 
@@ -60,15 +59,76 @@ def initialize_unit_distribution(st_territory, territory):
             if deploy_button and deploy_units > 0:
                 # Deploy additional units
                 territory["units"] += deploy_units
-                st.session_state[f"Territory-{st_territory}"] = territory
                 end_turn()
                 st.rerun()  # Refresh UI after deployment
 
 
+def move_units(units, origin, destination):
+    st.session_state[f"Territory-{origin}"]["units"] -= units
+
+    if (
+        st.session_state[f"Territory-{destination}"]["owner"]
+        == st.session_state.current_player
+    ):
+        st.session_state[f"Territory-{destination}"]["units"] += units
+
+        target_unit_count = st.session_state[f"Territory-{origin}"]["units"]
+        st.write(f"Moving {target_unit_count} to ... {destination}")
+        st.rerun()
+
+    else:
+        # Call function with combat logic here
+        st.write("MORTAL COMBAT!!!")
+        st.rerun()
+
+
+def unit_activity(territory):
+    with st.form(key=f"territory_options_form_{territory['name']}"):
+        neighbors = territory["neighbors"]
+        max_units = territory["units"]
+
+        unit_count_col, destination_col = st.columns(2)
+
+        with unit_count_col:
+            unit_count = st.number_input(
+                "Move Units",
+                value=0,
+                step=1,
+                max_value=max_units,
+                min_value=0,
+                placeholder="Number of Units to Move",
+            )
+
+        with destination_col:
+            units_destination = st.pills("Neighboring Territories", options=neighbors)
+
+        button_col, message_col = st.columns(2)
+
+        with button_col:
+            territory_action_button = st.form_submit_button("Move Units")
+
+        with message_col:
+            if territory_action_button:
+                move_units(
+                    units=unit_count,
+                    origin=territory["name"],
+                    destination=units_destination,
+                )
+
+
+def territory_actions(territory):
+    if territory["owner"] == st.session_state.current_player:
+        unit_activity(territory)
+
+
+def main_loop():
+    pass
+
+
 def display_board():
-    for st_territory in st.session_state["Territories"]:
+    for territory_name in st.session_state["Territories"]:
         # Retrieve territory data
-        territory = st.session_state[f"Territory-{st_territory}"]
+        territory = st.session_state[f"Territory-{territory_name}"]
 
         # Create a tile for each territory
         tile = st.container(height=200)
@@ -97,9 +157,14 @@ def display_board():
                         end_round()
 
                     else:
-                        initialize_unit_distribution(
-                            st_territory=st_territory, territory=territory
-                        )
+                        initialize_unit_distribution(territory=territory)
+
+                else:
+                    territory_actions(territory=territory)
+                    # add the next steps for how do get more units from each territory
+                    # add how to attack/pass at the end of a turn
+                    # create combat module
+                    pass
 
 
 def game_status(game):
@@ -126,8 +191,7 @@ def layout(game):
     st.set_page_config(layout="wide")
 
     # Primary Game Canvas
-    left_col, middle_col = st.columns([1, 3])
-    with left_col:
+    with st.sidebar:
         # with st.container(height=650):
         #     st.write(st.session_state)
         game_status(game)
@@ -136,8 +200,7 @@ def layout(game):
             end_turn()
             st.rerun()
 
-    with middle_col:
-        display_board()
+    display_board()
 
     # Right column: Print all attributes of the game object
     # with right_col:
