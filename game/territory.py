@@ -4,6 +4,8 @@ class Territory:
         self.neighbors = neighbors
         self.owner = None
         self.units = 0
+        self.units_per_round = 1
+        self.coins_per_round = 1
         # self.buildings = []
 
     def add_units(self, count):

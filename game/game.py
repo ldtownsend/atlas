@@ -76,6 +76,7 @@ class Game:
                     "neighbors": territory.neighbors,
                     "owner": territory.owner,
                     "units": territory.units,
+                    "units_per_round": territory.units_per_round,
                 }
 
         return board

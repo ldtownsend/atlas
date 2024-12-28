@@ -2,6 +2,20 @@ import streamlit as st
 import random
 
 
+def per_round_distribution():
+    for territory_name in st.session_state["Territories"]:
+
+        territory = st.session_state[f"Territory-{territory_name}"]
+        territory["units"] += territory["units_per_round"]
+
+
+def end_round():
+    st.session_state.round_number += 1
+    st.session_state.current_player = st.session_state.Players[0]
+    per_round_distribution()
+    st.rerun()
+
+
 def _next_player(players, current_player):
     current_index = players.index(current_player)
     next_index = (current_index - 1) % len(players)
@@ -9,16 +23,18 @@ def _next_player(players, current_player):
 
 
 def end_turn():
-    next_player = _next_player(
-        players=st.session_state["Players"],
-        current_player=st.session_state.current_player,
-    )
-    st.session_state.current_player = next_player
+    if (
+        st.session_state.round_number > 0
+        and st.session_state.current_player == st.session_state.Players[-1]
+    ):
+        end_round()
 
-
-def end_round():
-    st.session_state.round_number += 1
-    st.session_state.current_player = st.session_state.Players[0]
+    else:
+        next_player = _next_player(
+            players=st.session_state["Players"],
+            current_player=st.session_state.current_player,
+        )
+        st.session_state.current_player = next_player
 
 
 def initialize_unit_distribution(territory):
@@ -114,7 +130,7 @@ def move_units(units, origin, destination):
             destination_territory["owner"] = origin_territory["owner"]
         destination_territory["units"] = remaining_units
 
-        st.write("MORTAL COMBAT!!!")
+        end_turn()
         st.rerun()
 
 
@@ -241,6 +257,8 @@ def layout(game):
     # Right column: Print all attributes of the game object
     # with right_col:
     #     st.write("### Game Object Attributes")
+
+    st.write(st.session_state.Players[-1])
 
     st.write(st.session_state)
     # st.write("### Territories")
