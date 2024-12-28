@@ -1,4 +1,5 @@
 import streamlit as st
+import random
 
 
 def _next_player(players, current_player):
@@ -63,21 +64,56 @@ def initialize_unit_distribution(territory):
                 st.rerun()  # Refresh UI after deployment
 
 
+def determine_winner(defending_units, attacking_units):
+    if defending_units > attacking_units:
+        return "defender", defending_units
+    else:
+        return "attacker", attacking_units
+
+
+def combat(defending_units, attacking_units):
+    while min(defending_units, attacking_units) > 0:
+        defender_roll = random.randint(0, 9)
+        attacker_roll = random.randint(0, 9)
+
+        if defender_roll > attacker_roll:
+            attacking_units -= 1
+        elif defender_roll < attacker_roll:
+            defending_units -= 1
+        else:
+            pass
+
+        # print(f"Attacker Roll: {attacker_roll}; Defender Roll: {defender_roll}")
+        # print(f"Attacker Units: {attacking_units}; Defender Units: {defending_units}")
+
+    return defending_units, attacking_units
+
+
 def move_units(units, origin, destination):
-    st.session_state[f"Territory-{origin}"]["units"] -= units
+    origin_territory = st.session_state[f"Territory-{origin}"]
+    destination_territory = st.session_state[f"Territory-{destination}"]
 
-    if (
-        st.session_state[f"Territory-{destination}"]["owner"]
-        == st.session_state.current_player
-    ):
-        st.session_state[f"Territory-{destination}"]["units"] += units
+    origin_territory["units"] -= units
 
-        target_unit_count = st.session_state[f"Territory-{origin}"]["units"]
+    if destination_territory["owner"] == st.session_state.current_player:
+        destination_territory["units"] += units
+
+        target_unit_count = origin_territory["units"]
         st.write(f"Moving {target_unit_count} to ... {destination}")
         st.rerun()
 
     else:
         # Call function with combat logic here
+
+        defending_units, attacking_units = combat(
+            defending_units=destination_territory["units"], attacking_units=units
+        )
+        winner, remaining_units = determine_winner(defending_units, attacking_units)
+
+        if winner == "attacker":
+            destination_territory["owner"] = origin_territory["owner"]
+        destination_territory["units"] = remaining_units
+
         st.write("MORTAL COMBAT!!!")
         st.rerun()
 
